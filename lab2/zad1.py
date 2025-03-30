@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
     learning_rate = 0.01
     discount_factor = 0.9
-    epsilon = 0.5
+    epsilon = 0.8
     num_episodes = 100
 
     avg_iter = 0
@@ -21,10 +21,7 @@ if __name__ == '__main__':
         num_iter = 0
         while True:
             num_iter += 1
-            action = get_random_action(env)  # 1
-            # action = get_best_action(q_table, state)  # 2
-            # action = get_action(env, q_table, state, epsilon)
-
+            action = get_action(env, q_table, state, epsilon)
             new_state, reward, terminated, _, _ = env.step(action)
 
             new_q = calculate_new_q_value(q_table,
@@ -37,7 +34,6 @@ if __name__ == '__main__':
             state = new_state
             if terminated:
                 break
-        # print(f'End of {episode}')
         avg_iter += num_iter
         avg_reward += reward
 
@@ -50,16 +46,13 @@ if __name__ == '__main__':
         num_iter = 0
         while True:
             num_iter += 1
-            # action = get_random_action(env)  # 1
-            action = get_best_action(q_table, state)  # 2
-            # action = get_action(env, q_table, state, epsilon)
+            action = get_best_action(q_table, state)
 
             new_state, reward, terminated, _, _ = env.step(action)
 
             state = new_state
             if terminated:
                 break
-        # print(f'End of {episode}')
         avg_iter += num_iter
         avg_reward += reward
 
@@ -67,6 +60,5 @@ if __name__ == '__main__':
 
 
     # Epsilon dobiva najgolem reward na kraj.
-    # RANDOM ACTION: avg_iter = 7.5, avg_reward = 0.02
-    # BEST ACTION: avg_iter = 9.52, avg_reward = 0.07
-    # EPSILON: avg_iter = 11.86, avg_reward = 0.02
+    # avg_ter = 7.9, avg_reward = 0.0
+    # Epsilon: avg_ter = 6.99, avg_reward = 0.03

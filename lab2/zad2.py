@@ -18,13 +18,10 @@ if __name__ == '__main__':
     avg_reward = 0
     for episode in range(num_episodes):
         state, _ = env.reset()
-        print(state)
         num_iter = 0
         while True:
             num_iter += 1
-            # action = get_random_action(env)  # 1
-            # action = get_best_action(q_table, state)  # 2
-            action = get_action(env, q_table, state, epsilon)
+            action = get_best_action(q_table, state)
 
             new_state, reward, terminated, _, _ = env.step(action)
 
