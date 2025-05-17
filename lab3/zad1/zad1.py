@@ -1,5 +1,4 @@
 import gymnasium as gym
-import numpy as np
 from collections import deque
 import random
 import torch
@@ -41,7 +40,7 @@ def state_to_dqn_input(state):
 
 
 def test(episodes, render=True):
-    env = gym.make('MountainCar-v0', render_mode='human' if render else None, max_episode_steps=300)
+    env = gym.make('MountainCar-v0', render_mode='human' if render else None, max_episode_steps=500)
     num_actions = env.action_space.n
 
     policy_dqn = DQN(in_states=2, h1_nodes=64, out_actions=num_actions)
@@ -84,7 +83,7 @@ class MountainCarDQN:
     ACTIONS = ['L', 'N', 'R']
 
     def train(self, episodes, render=False):
-        env = gym.make('MountainCar-v0', render_mode='human' if render else None, max_episode_steps=400)
+        env = gym.make('MountainCar-v0', render_mode='human' if render else None, max_episode_steps=500)
         num_actions = env.action_space.n
 
         epsilon = 1
@@ -97,7 +96,6 @@ class MountainCarDQN:
 
         self.optimizer = torch.optim.Adam(policy_dqn.parameters(), lr=self.learning_rate_a)
 
-        rewards_per_episode = np.zeros(episodes)
         step_count = 0
 
         for i in range(episodes):
@@ -126,8 +124,6 @@ class MountainCarDQN:
                 memory.append((state, action, new_state, reward, terminated))
                 state = new_state
                 step_count += 1
-
-            rewards_per_episode[i] = reward
 
             if len(memory) > self.mini_batch_size and reward > 1900:
                 mini_batch = memory.sample(self.mini_batch_size)
@@ -171,7 +167,7 @@ class MountainCarDQN:
 
 if __name__ == '__main__':
     dqn = MountainCarDQN()
-    dqn.train(episodes=250, render=False)
+    dqn.train(episodes=2000, render=False)
     test(episodes=5)
     test(episodes=100, render=False)
     test(episodes=50, render=False)

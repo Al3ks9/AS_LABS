@@ -33,8 +33,43 @@ class ReplayMemory:
         return len(self.memory)
 
 
-class MountainCarDQN:
+def state_to_dqn_input(state):
+    position, velocity = state
+    normalized_position = (position - (-1.2)) / (0.6 - (-1.2)) * 2 - 1
+    normalized_velocity = (velocity - (-0.07)) / (0.07 - (-0.07)) * 2 - 1
+    return torch.FloatTensor([normalized_position, normalized_velocity])
 
+
+def test(episodes, render=True):
+    env = gym.make('MountainCar-v0', render_mode='human' if render else None, max_episode_steps=500)
+    num_actions = env.action_space.n
+
+    policy_dqn = DQN(in_states=2, h1_nodes=64, out_actions=num_actions)
+    policy_dqn.load_state_dict(torch.load("mountain_car_ddqn.pt"))
+    policy_dqn.eval()
+
+    total_reward = 0
+
+    for i in range(episodes):
+        state = env.reset()[0]
+        terminated = False
+        truncated = False
+        episode_reward = 0
+
+        while not terminated and not truncated:
+            with torch.no_grad():
+                action = policy_dqn(state_to_dqn_input(state)).argmax().item()
+            state, reward, terminated, truncated, _ = env.step(action)
+            episode_reward += reward
+
+        total_reward += episode_reward
+
+    env.close()
+
+    print(f"Average reward over {episodes} episodes: {total_reward / episodes:.2f}")
+
+
+class MountainCarDQN:
     learning_rate_a = 0.001
     discount_factor_g = 0.8
     network_sync_rate = 10
@@ -73,7 +108,7 @@ class MountainCarDQN:
                     action = env.action_space.sample()
                 else:
                     with torch.no_grad():
-                        action = policy_dqn(self.state_to_dqn_input(state)).argmax().item()
+                        action = policy_dqn(state_to_dqn_input(state)).argmax().item()
 
                 new_state, reward, terminated, truncated, _ = env.step(action)
 
@@ -106,13 +141,6 @@ class MountainCarDQN:
         env.close()
         torch.save(policy_dqn.state_dict(), "mountain_car_ddqn.pt")
 
-
-    def state_to_dqn_input(self, state):
-        position, velocity = state
-        normalized_position = (position - (-1.2)) / (0.6 - (-1.2)) * 2 - 1
-        normalized_velocity = (velocity - (-0.07)) / (0.07 - (-0.07)) * 2 - 1
-        return torch.FloatTensor([normalized_position, normalized_velocity])
-
     def optimize(self, mini_batch, policy_dqn, target_dqn):
         current_q_list = []
         target_q_list = []
@@ -122,15 +150,15 @@ class MountainCarDQN:
                 target = torch.FloatTensor([reward])
             else:
                 with torch.no_grad():
-                    next_action = policy_dqn(self.state_to_dqn_input(new_state)).argmax().item()
+                    next_action = policy_dqn(state_to_dqn_input(new_state)).argmax().item()
                     target = torch.FloatTensor(
-                        reward + self.discount_factor_g * target_dqn(self.state_to_dqn_input(new_state))[next_action]
+                        reward + self.discount_factor_g * target_dqn(state_to_dqn_input(new_state))[next_action]
                     )
 
-            current_q = policy_dqn(self.state_to_dqn_input(state))
+            current_q = policy_dqn(state_to_dqn_input(state))
             current_q_list.append(current_q)
 
-            target_q = target_dqn(self.state_to_dqn_input(state))
+            target_q = target_dqn(state_to_dqn_input(state))
             target_q[action] = target
             target_q_list.append(target_q)
 
@@ -139,39 +167,12 @@ class MountainCarDQN:
         loss.backward()
         self.optimizer.step()
 
-    def test(self, episodes, render=True):
-        env = gym.make('MountainCar-v0', render_mode='human' if render else None, max_episode_steps=500)
-        num_actions = env.action_space.n
-
-        policy_dqn = DQN(in_states=2, h1_nodes=64, out_actions=num_actions)
-        policy_dqn.load_state_dict(torch.load("mountain_car_ddqn.pt"))
-        policy_dqn.eval()
-
-        total_reward = 0
-
-        for i in range(episodes):
-            state = env.reset()[0]
-            terminated = False
-            truncated = False
-            episode_reward = 0
-
-            while not terminated and not truncated:
-                with torch.no_grad():
-                    action = policy_dqn(self.state_to_dqn_input(state)).argmax().item()
-                state, reward, terminated, truncated, _ = env.step(action)
-                episode_reward += reward
-
-            total_reward += episode_reward
-
-        env.close()
-
-        print(f"Average reward over {episodes} episodes: {total_reward / episodes:.2f}")
 
 if __name__ == "__main__":
     dqn = MountainCarDQN()
     # dqn.train(1000, render=False)
-    dqn.test(10, render=True)
-    dqn.test(50, False)
-    dqn.test(100, False)
+    # dqn.test(10, render=True)
+    test(50, False)
+    test(100, False)
     # Average reward over 50 episodes: -304.00
     # Average reward over 100 episodes: -300.00

@@ -10,11 +10,13 @@ import ale_py
 
 gym.register_envs(ale_py)
 
+
 def preprocess_state(state):
     grayscale_img = np.array(state, dtype=np.float32)
     grayscale_img = grayscale_img / 255.0
     preprocessed = grayscale_img[np.newaxis, :, :]
     return preprocessed
+
 
 class ReplayMemory:
     def __init__(self, capacity):
@@ -28,6 +30,7 @@ class ReplayMemory:
 
     def __len__(self):
         return len(self.memory)
+
 
 class DuelingDQN(nn.Module):
     def __init__(self, input_shape, output_dim):
@@ -56,6 +59,7 @@ class DuelingDQN(nn.Module):
         q_values = value + (advantage - advantage.mean(dim=1, keepdim=True))
         return q_values
 
+
 BATCH_SIZE = 32
 GAMMA = 0.99
 EPSILON_START = 1.0
@@ -64,6 +68,7 @@ EPSILON_DECAY = 0.995
 LEARNING_RATE = 0.0001
 TARGET_UPDATE = 10
 MEMORY_CAPACITY = 10000
+
 
 def train_dueling_dqn(episodes=1000):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -134,11 +139,14 @@ def train_dueling_dqn(episodes=1000):
         avg_time_per_episode = elapsed_time / (episode + 1)
         eta = avg_time_per_episode * episodes_remaining
         eta_minutes, eta_seconds = divmod(int(eta), 60)
-        print(f"\rEpisode {episode + 1}/{episodes} completed. Total Reward: {total_reward}. ETA: {eta_minutes}m {eta_seconds}s", end='')
+        print(
+            f"\rEpisode {episode + 1}/{episodes} completed. Total Reward: {total_reward}. ETA: {eta_minutes}m {eta_seconds}s",
+            end='')
 
     print("\nTraining complete.")
     torch.save(policy_net.state_dict(), 'dueling_dqn_mspacman.pth')
     env.close()
+
 
 def test_dqn(model_path, episodes=10, render=False):
     env = gym.make('ALE/MsPacman-v5', render_mode='human' if render else None, obs_type='grayscale')
@@ -174,8 +182,9 @@ def test_dqn(model_path, episodes=10, render=False):
 
     print(f"Average Reward over {episodes} episodes: {np.mean(total_rewards):.2f}")
 
+
 if __name__ == '__main__':
-    train_dueling_dqn(1000)
+    # train_dueling_dqn(1000)
     test_dqn('dueling_dqn_mspacman.pth', episodes=100, render=False)
     # trained for 1000 episodes
     # avg reward over 100 episodes: 200.8

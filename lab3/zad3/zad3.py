@@ -11,11 +11,13 @@ import time
 
 gym.register_envs(ale_py)
 
+
 def preprocess_state(state):
     grayscale_img = np.array(state, dtype=np.float32)
     grayscale_img = grayscale_img / 255.0
     preprocessed = grayscale_img[np.newaxis, :, :]
     return preprocessed
+
 
 class DQN(nn.Module):
     def __init__(self, input_shape, output_dim):
@@ -33,6 +35,7 @@ class DQN(nn.Module):
         x = x.view(x.size(0), -1)
         return self.fc(x)
 
+
 class ReplayMemory:
     def __init__(self, capacity):
         self.memory = deque(maxlen=capacity)
@@ -46,6 +49,7 @@ class ReplayMemory:
     def __len__(self):
         return len(self.memory)
 
+
 BATCH_SIZE = 32
 GAMMA = 0.99
 EPSILON_START = 1.0
@@ -55,7 +59,6 @@ LEARNING_RATE = 0.0001
 TARGET_UPDATE = 10
 MEMORY_CAPACITY = 10000
 
-import torch.multiprocessing as mp
 
 def train_dqn(episodes=1000):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -133,6 +136,7 @@ def train_dqn(episodes=1000):
     torch.save(policy_net.state_dict(), 'dqn_mspacman.pth')
     env.close()
 
+
 def test_dqn(model_path, episodes=10, render=False):
     env = gym.make('ALE/MsPacman-v5', render_mode='human' if render else None, obs_type='grayscale')
     policy_net = DQN((1, 210, 160), 9)
@@ -167,6 +171,7 @@ def test_dqn(model_path, episodes=10, render=False):
 
     print(f"Average Reward over {episodes} episodes: {np.mean(total_rewards):.2f}")
 
+
 if __name__ == '__main__':
     # Uncomment the following lines to train or test the model
     # train_dqn(500)
@@ -174,4 +179,3 @@ if __name__ == '__main__':
     test_dqn('dqn_mspacman.pth', episodes=100, render=False)
     # 207 avg reward after 100 episodes
     # 603.9 avg reward after 500 episodes
-
