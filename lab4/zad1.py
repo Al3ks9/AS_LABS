@@ -6,6 +6,10 @@ import time
 import numpy as np
 from torch.distributions import Categorical
 
+# =================== Set device ===================
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
+
 # =================== Actor Network ===================
 class Actor(nn.Module):
     def __init__(self, state_dim, action_dim, hidden_dim=128):
@@ -59,8 +63,8 @@ def train_agent(episodes=1000, gamma=0.99):
     state_dim = env.observation_space.shape[0]
     action_dim = env.action_space.n
 
-    actor = Actor(state_dim, action_dim)
-    critic = Critic(state_dim)
+    actor = Actor(state_dim, action_dim).to(device)
+    critic = Critic(state_dim).to(device)
 
     actor_optimizer = optim.Adam(actor.parameters(), lr=1e-4)
     critic_optimizer = optim.Adam(critic.parameters(), lr=5e-4)
@@ -73,7 +77,7 @@ def train_agent(episodes=1000, gamma=0.99):
         transitions = []
 
         while not done:
-            state_tensor = torch.tensor(state, dtype=torch.float32)
+            state_tensor = torch.tensor(state, dtype=torch.float32).to(device)
             probs = actor(state_tensor)
             dist = Categorical(probs)
             action = dist.sample().item()
@@ -85,23 +89,22 @@ def train_agent(episodes=1000, gamma=0.99):
             transitions.append((state, action, reward, next_state, done))
             state = next_state
 
-        # Compute advantages and train networks
         for t in range(len(transitions)):
             s, a, r, s_next, d = transitions[t]
 
-            state_tensor = torch.tensor(s, dtype=torch.float32)
-            next_state_tensor = torch.tensor(s_next, dtype=torch.float32)
-            reward_tensor = torch.tensor(r, dtype=torch.float32)
+            state_tensor = torch.tensor(s, dtype=torch.float32).to(device)
+            next_state_tensor = torch.tensor(s_next, dtype=torch.float32).to(device)
+            reward_tensor = torch.tensor(r, dtype=torch.float32).to(device)
+            done_tensor = torch.tensor(d, dtype=torch.float32).to(device)
 
             value = critic(state_tensor)
             next_value = critic(next_state_tensor)
-            target = reward_tensor + (1 - d) * gamma * next_value
+            target = reward_tensor + (1 - done_tensor) * gamma * next_value
             advantage = target - value
 
-            actor.train_step(actor_optimizer, state_tensor, torch.tensor(a), advantage)
+            actor.train_step(actor_optimizer, state_tensor, torch.tensor(a).to(device), advantage)
             critic.train_step(critic_optimizer, state_tensor, target)
 
-        # Print progress with ETA
         elapsed = time.time() - start_time
         avg_time = elapsed / episode
         remaining = avg_time * (episodes - episode)
@@ -111,15 +114,17 @@ def train_agent(episodes=1000, gamma=0.99):
     torch.save(actor.state_dict(), "actor.pt")
     torch.save(critic.state_dict(), 'critic.pt')
 
+
 # =================== Evaluation Function ===================
-def test_agent(episodes=100):
-    env = gym.make("LunarLander-v3")
+def test_agent(episodes=100, render_mode=False):
+    env = gym.make("LunarLander-v3", render_mode='human' if render_mode else None)
     state_dim = env.observation_space.shape[0]
     action_dim = env.action_space.n
 
-    actor = Actor(state_dim, action_dim)
-    actor.load_state_dict(torch.load("actor.pt"))
+    actor = Actor(state_dim, action_dim).to(device)
+    actor.load_state_dict(torch.load("actor.pt", map_location=device))
     actor.eval()
+
     print()
     total_rewards = []
     for episode in range(episodes):
@@ -127,7 +132,7 @@ def test_agent(episodes=100):
         done = False
         total_reward = 0
         while not done:
-            state_tensor = torch.tensor(state, dtype=torch.float32)
+            state_tensor = torch.tensor(state, dtype=torch.float32).to(device)
             with torch.no_grad():
                 probs = actor(state_tensor)
             action = torch.argmax(probs).item()
@@ -144,5 +149,5 @@ def test_agent(episodes=100):
 
 # =================== Main ===================
 if __name__ == "__main__":
-    train_agent(episodes=1000)
-    test_agent()
+    # train_agent(episodes=1000)
+    test_agent(5, render_mode=True)
