@@ -5,7 +5,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import ale_py
-from PIL import Image
 from collections import deque
 import time
 
