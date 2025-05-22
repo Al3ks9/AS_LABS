@@ -14,6 +14,7 @@ def compute_q_values():
         Q[('S', 'R')] = 0.5*Q[('S', 'R')] + 0.5*Q[('A', 'E')]
         Q[("A", "E")] = 0.5*Q[('A', 'E')] + 5
         # 3
+        # comment next two lines to solve for 2b
         Q[('S', 'R')] = 0.5 * Q[('S', 'R')] + 0.5 * Q[('A', 'E')]
         Q[("A", "E")] = 0.5 * Q[('A', 'E')] + 5
 
