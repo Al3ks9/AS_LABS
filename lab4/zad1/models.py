@@ -1,4 +1,22 @@
 import torch.nn as nn
+import numpy as np
+
+
+class OUNoise:
+    def __init__(self, size, mu=0.0, theta=0.15, sigma=0.2):
+        self.size = size
+        self.mu = mu
+        self.theta = theta
+        self.sigma = sigma
+        self.reset()
+
+    def reset(self):
+        self.state = np.ones(self.size) * self.mu
+
+    def sample(self):
+        dx = self.theta * (self.mu - self.state) + self.sigma * np.random.randn(self.size)
+        self.state += dx
+        return self.state
 
 
 class Actor(nn.Module):
@@ -7,8 +25,10 @@ class Actor(nn.Module):
         self.model = nn.Sequential(
             nn.Linear(state_dim, 128),
             nn.ReLU(),
+            nn.Linear(128, 128),
+            nn.ReLU(),
             nn.Linear(128, action_dim),
-            nn.Softmax(dim=-1)
+            nn.Tanh()
         )
 
     def forward(self, x):
