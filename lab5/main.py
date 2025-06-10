@@ -144,7 +144,12 @@ def test(episodes=5, render=None):
 
 
 if __name__ == '__main__':
-    # train()
+    train(1000)
     load_q_table()
     # test()
     test(100, False)
+
+# Summary after test episodes:
+# Player 1 (Q Agent) wins: 90
+# Player 2 (Random) wins: 4
+# Draws: 6

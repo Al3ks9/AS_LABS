@@ -146,5 +146,11 @@ def test(render_episodes=5, render=False):
 
 
 if __name__ == '__main__':
-    train(episodes=100)
+    train(episodes=1000)
     test(100)
+
+# Testing complete.
+# Test Results over 100 games:
+# Player 1 (Q1) wins: 0
+# Player 2 (Q2) wins: 0
+# Draws: 100
